@@ -199,9 +199,3 @@ All Django models, query logic, ORM optimization techniques, and
 architectural decisions were written, reviewed, and are fully understood
 by the author.
 ---
-
-## Author
-
-**Yehor Shramchenko**
-[shramchenko.yehor@gmail.com]
-[github.com/pet-proj]
