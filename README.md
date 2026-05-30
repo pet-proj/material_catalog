@@ -185,6 +185,9 @@ The following improvements are documented in `views.py` as inline comments:
 - SKU is included on the Product model as it is a standard field in
   construction material procurement systems and relevant to Remarcable's
   domain.
+- In a production environment, sensitive settings such as `SECRET_KEY` 
+and `DEBUG` would be managed via environment variables using a 
+`.env` file, not hardcoded in `settings.py`.
 
 ---
 
