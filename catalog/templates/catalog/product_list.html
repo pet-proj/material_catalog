@@ -1,30 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Material Catalog</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
-        h1 { color: #333; }
-        .search-form { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
-        .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-        .tags-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
-        .tags-grid label { font-weight: normal; display: flex; align-items: center; gap: 5px; }
-        button { background: #0057a8; color: white; padding: 10px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; }
-        button:hover { background: #00408a; }
-        .clear-link { margin-left: 12px; color: #666; text-decoration: none; font-size: 14px; }
-        .active-filters { background: #e8f0fe; padding: 10px 16px; border-radius: 4px; margin-bottom: 16px; font-size: 14px; }
-        .results-count { color: #555; margin-bottom: 12px; font-size: 14px; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #0057a8; color: white; padding: 10px 14px; text-align: left; }
-        td { padding: 10px 14px; border-bottom: 1px solid #eee; vertical-align: top; }
-        tr:hover { background: #f9f9f9; }
-        .tag-badge { display: inline-block; background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin: 2px; }
-        .no-results { text-align: center; padding: 40px; color: #888; }
-    </style>
+    <link rel="stylesheet" href="{% static 'catalog/css/product_list.css' %}">
 </head>
 <body>
 
@@ -56,7 +37,7 @@
                 <label>Filter by Tags</label>
                 <div class="tags-grid">
                     {% for tag in tags %}
-                        <label>
+                        <label class="tag-checkbox">
                             <input type="checkbox" name="tags" value="{{ tag.id }}"
                                 {% if tag.id|stringformat:"s" in selected_tags %}checked{% endif %}>
                             {{ tag.name }}
@@ -113,7 +94,7 @@
                         <td>{{ product.description }}</td>
                         <td>{{ product.category.name }}</td>
                         <td>{{ product.get_unit_of_measure_display }}</td>
-                        <td>
+                        <td class="tags-cell">
                             {% for tag in product.tags.all %}
                                 <span class="tag-badge">{{ tag.name }}</span>
                             {% endfor %}
