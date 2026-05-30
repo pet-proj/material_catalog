@@ -14,30 +14,6 @@ products by name, description, category, and tags.
 
 ---
 
-## Project Structure
-material_catalog/
-├── catalog/                    			# Main application
-│   ├── migrations/             			# Database migrations
-│   │   ├── 0001_initial.py     			# Creates Category, Tag, Product tables
-│   │   └── 0002_seed_initial_data.py  		# Populates sample data
-│   ├── templates/
-│   │   └── catalog/
-│   │       └── product_list.html  			# Search and filter UI
-│   ├── admin.py                   			# Admin configuration
-│   ├── models.py                  			# Category, Tag, Product models
-│   ├── urls.py                    			# App URL routing
-│   └── views.py                   			# Search and filter logic
-├── core/                          			# Django project configuration
-│   ├── settings.py
-│   ├── urls.py
-│   └── wsgi.py
-├── .gitignore
-├── manage.py
-├── README.md
-└── requirements.txt
-
----
-
 ## Setup Instructions
 
 ### 1. Clone the Repository
