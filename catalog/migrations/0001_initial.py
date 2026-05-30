@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
             name='Category',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100)),
+                ('name', models.CharField(max_length=100, unique=True)),
             ],
             options={
                 'verbose_name_plural': 'Categories',
@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
             name='Tag',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100)),
+                ('name', models.CharField(max_length=100, unique=True)),
             ],
         ),
         migrations.CreateModel(
@@ -37,8 +37,16 @@ class Migration(migrations.Migration):
                 ('sku', models.CharField(max_length=50, unique=True)),
                 ('description', models.TextField()),
                 ('unit_of_measure', models.CharField(choices=[('each', 'Each'), ('box', 'Box'), ('spool', 'Spool'), ('roll', 'Roll'), ('pair', 'Pair'), ('set', 'Set')], default='each', max_length=20)),
-                ('category', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='products', to='catalog.category')),
+                ('category', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='products', to='catalog.category')),
                 ('tags', models.ManyToManyField(blank=True, related_name='products', to='catalog.tag')),
             ],
+            options={
+                'constraints': [
+                    models.CheckConstraint(
+                        condition=models.Q(unit_of_measure__in=['each', 'box', 'spool', 'roll', 'pair', 'set']),
+                        name='valid_unit_of_measure',
+                    ),
+                ],
+            },
         ),
     ]
