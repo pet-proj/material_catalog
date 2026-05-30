@@ -160,15 +160,23 @@ categories + 20 for tags). With these optimizations, it fires exactly
 
 ## Future Optimizations
 
-The following improvements are documented in `views.py` as inline comments:
+1. **Database Indexes** — add `db_index=True` to frequently filtered fields
+   (e.g. `Product.name`, `Product.category`) to speed up `WHERE` clauses
+   significantly at 100k+ records.
 
-1. **Pagination** — limit results per page using `django.core.paginator`
-2. **Database Indexes** — add `db_index=True` to frequently filtered fields
-3. **Caching** — cache querysets for read-heavy, rarely changing catalogs
-4. **Full-Text Search** — replace `icontains` with PostgreSQL `SearchVector`
-   for indexed, ranked full-text search at scale
-5. **AND Tag Logic** — current implementation uses OR logic across tags;
-   AND logic can be achieved by chaining individual `.filter()` calls
+2. **Caching** — for read-heavy catalogs that change infrequently, cache
+   querysets using Django's cache framework (`cache.get` / `cache.set`) to
+   eliminate DB hits entirely for repeated identical queries.
+
+3. **Full-Text Search** — `icontains` uses `SQL LIKE '%term%'` which cannot
+   use indexes and performs a full table scan. At scale, replace with
+   `SearchVector` / `SearchQuery` (PostgreSQL only) or a dedicated engine
+   such as Elasticsearch or Meilisearch.
+
+4. **AND Tag Logic** — current tag filtering uses OR logic (products matching
+   any selected tag are returned). AND logic (all selected tags must match)
+   can be achieved by chaining individual `.filter()` calls, which generates
+   a separate JOIN per tag.
 
 ---
 
@@ -178,8 +186,8 @@ The following improvements are documented in `views.py` as inline comments:
   would be the recommended database, particularly to leverage full-text
   search capabilities via `django.contrib.postgres`.
 - Tag filtering uses OR logic — products matching any selected tag are
-  returned. AND logic (all tags must match) is documented as a future
-  enhancement in `views.py`.
+  returned. AND logic (all tags must match) is listed as a future
+  enhancement.
 - Styling is intentionally minimal per assignment requirements. The focus
   is on functionality and query implementation.
 - SKU is included on the Product model as it is a standard field in

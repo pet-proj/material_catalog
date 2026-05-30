@@ -1,56 +1,10 @@
 from django.shortcuts import render
-from django.db.models import Q, Prefetch
+from django.db.models import Q
 from django.core.paginator import Paginator
 from .models import Product, Category, Tag
 
 
 def product_list(request):
-    """
-    Product search and filter view.
-
-    Demonstrates Django ORM proficiency through:
-    - Q objects for complex lookups
-    - select_related for ForeignKey optimization
-    - prefetch_related for ManyToMany optimization
-    - Chainable querysets for dynamic filtering
-
-    Performance Notes:
-    ─────────────────────────────────────────────
-    Current approach: suitable for small-to-medium datasets (< 100k records).
-    Each request builds and executes one optimized SQL query against the DB.
-    Filtering is handled at the database level, not in Python memory.
-
-    Future Optimizations to Consider:
-    ─────────────────────────────────────────────
-    1. PAGINATION: At scale, never return unbounded querysets.
-       Use Django's Paginator to limit rows per request.
-       See: django.core.paginator.Paginator
-
-    2. DATABASE INDEXES: Add db_index=True to frequently filtered fields
-       e.g. Product.name, Product.category — speeds up WHERE clauses
-       significantly at 100k+ records.
-
-    3. CACHING: For read-heavy catalogs that rarely change,
-       cache the queryset result using Django's cache framework.
-       e.g. cache.get('product_list') / cache.set(...)
-       Eliminates DB hits entirely for repeated identical queries.
-
-    4. FULL-TEXT SEARCH: icontains uses SQL LIKE '%term%' which cannot
-       use indexes and does a full table scan. At scale, replace with:
-       - Django's SearchVector/SearchQuery (PostgreSQL only)
-       - Dedicated search engine: Elasticsearch or Meilisearch
-
-    5. QUERY COUNT: Use Django Debug Toolbar in development to monitor
-       how many queries are fired per request. Target: 1-3 queries max.
-    """
-
-    # ── Sidebar Data ──────────────────────────────────────────────────────
-    # These two queries are always needed to populate the filter form.
-    # They are intentionally simple — categories and tags rarely exceed
-    # hundreds of records so no optimization needed here.
-    #
-    # Future: if categories/tags become large, consider caching these
-    # since they change infrequently.
     categories = Category.objects.all().order_by("name")
     tags = Tag.objects.all().order_by("name")
 
@@ -128,10 +82,8 @@ def product_list(request):
         # This generates a separate JOIN per tag, guaranteeing all match.
         products = products.filter(tags__id__in=selected_tags).distinct()
 
-    # Paginate results — 10 per page
     paginator = Paginator(products, 10)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginator.get_page(request.GET.get("page"))
 
     # ── Context ───────────────────────────────────────────────────────────
     # At this point, no SQL has been executed yet.
