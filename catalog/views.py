@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.db.models import Q, Prefetch
+from django.core.paginator import Paginator
 from .models import Product, Category, Tag
 
 
@@ -127,12 +128,18 @@ def product_list(request):
         # This generates a separate JOIN per tag, guaranteeing all match.
         products = products.filter(tags__id__in=selected_tags).distinct()
 
+    # Paginate results — 10 per page
+    paginator = Paginator(products, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
     # ── Context ───────────────────────────────────────────────────────────
     # At this point, no SQL has been executed yet.
     # The queryset is evaluated (SQL fires) when the template
     # iterates over 'products' with {% for product in products %}.
     context = {
-        "products": products,
+        "page_obj": page_obj,
+        "products": page_obj.object_list,
         "categories": categories,
         "tags": tags,
         "query": query,
