@@ -11,116 +11,166 @@
 
     <h1>🔌 Material Catalog</h1>
 
-    <!-- Search & Filter Form -->
-    <div class="search-form">
-        <form method="GET">
+    <div class="layout">
 
-            <div class="form-group">
-                <label for="q">Search by Name or Description</label>
-                <input type="text" id="q" name="q" value="{{ query }}" placeholder="e.g. copper wire, circuit breaker...">
-            </div>
+        <!-- Sidebar — Saved Filters -->
+        <div class="sidebar">
+            <h3>Saved Filters</h3>
 
-            <div class="form-group">
-                <label for="category">Filter by Category</label>
-                <select id="category" name="category">
-                    <option value="">-- All Categories --</option>
-                    {% for category in categories %}
-                        <option value="{{ category.id }}"
-                            {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
-                            {{ category.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Filter by Tags</label>
-                <div class="tags-grid">
-                    {% for tag in tags %}
-                        <label class="tag-checkbox">
-                            <input type="checkbox" name="tags" value="{{ tag.id }}"
-                                {% if tag.id|stringformat:"s" in selected_tags %}checked{% endif %}>
-                            {{ tag.name }}
-                        </label>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <button type="submit">Search</button>
-            <a href="/" class="clear-link">✕ Clear Filters</a>
-
-        </form>
-    </div>
-
-    <!-- Active Filters Display -->
-    {% if query or selected_category or selected_tags %}
-        <div class="active-filters">
-            <strong>Active filters:</strong>
-            {% if query %} Search: <em>"{{ query }}"</em>{% endif %}
-            {% if selected_category %}
-                {% for category in categories %}
-                    {% if selected_category == category.id|stringformat:"s" %}
-                        &nbsp;| Category: <em>{{ category.name }}</em>
-                    {% endif %}
+            {% if saved_filters %}
+                {% for sf in saved_filters %}
+                    <div class="saved-filter-item">
+                        <!-- Load saved filter by passing its parameters as GET params -->
+                        <a href="?q={{ sf.query }}&category={{ sf.category_id|default:'' }}{% for tag in sf.tags.all %}&tags={{ tag.id }}{% endfor %}">
+                            {{ sf.name }}
+                        </a>
+                        <!-- Delete saved filter — POST to prevent accidental deletion -->
+                        <form method="POST" action="{% url 'catalog:delete_filter' sf.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="delete-btn" title="Delete filter">✕</button>
+                        </form>
+                    </div>
                 {% endfor %}
+            {% else %}
+                <p class="no-saved">No saved filters yet.</p>
             {% endif %}
-            {% if selected_tags %} &nbsp;| Tags selected: <em>{{ selected_tags|length }}</em>{% endif %}
         </div>
-    {% endif %}
 
-    <!-- Results Count -->
-    <div class="results-count">
-        Showing <strong>{{ page_obj.object_list|length }}</strong> / <strong>{{ page_obj.paginator.count }}</strong> product{{ page_obj.paginator.count|pluralize }}
-    </div>
+        <!-- Main Content -->
+        <div>
 
-    <!-- Results Table -->
-    {% if products %}
-        <table>
-            <thead>
-                <tr>
-                    <th>SKU</th>
-                    <th>Name</th>
-                    <th>Description</th>
-                    <th>Category</th>
-                    <th>Unit</th>
-                    <th>Tags</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for product in products %}
-                    <tr>
-                        <td>{{ product.sku }}</td>
-                        <td>{{ product.name }}</td>
-                        <td>{{ product.description }}</td>
-                        <td>{{ product.category.name }}</td>
-                        <td>{{ product.get_unit_of_measure_display }}</td>
-                        <td class="tags-cell">
-                            {% for tag in product.tags.all %}
-                                <span class="tag-badge">{{ tag.name }}</span>
+            <!-- Search & Filter Form -->
+            <div class="search-form">
+                <form method="GET">
+
+                    <div class="form-group">
+                        <label for="q">Search by Name or Description</label>
+                        <input type="text" id="q" name="q" value="{{ query }}"
+                            placeholder="e.g. copper wire, circuit breaker...">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="category">Filter by Category</label>
+                        <select id="category" name="category">
+                            <option value="">-- All Categories --</option>
+                            {% for category in categories %}
+                                <option value="{{ category.id }}"
+                                    {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
                             {% endfor %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <div class="no-results">
-            <p>No products found matching your search.</p>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Filter by Tags</label>
+                        <div class="tags-grid">
+                            {% for tag in tags %}
+                                <label>
+                                    <input type="checkbox" name="tags" value="{{ tag.id }}"
+                                        {% if tag.id|stringformat:"s" in selected_tags %}checked{% endif %}>
+                                    {{ tag.name }}
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Search</button>
+                        <a href="/" class="clear-link">✕ Clear Filters</a>
+                    </div>
+
+                </form>
+
+                <!-- Save Filter — separate POST form so its hidden inputs don't
+                     duplicate the GET form fields above and corrupt the search. -->
+                <form method="POST" action="{% url 'catalog:save_filter' %}" class="save-filter-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="q" value="{{ query }}">
+                    <input type="hidden" name="category" value="{{ selected_category }}">
+                    {% for tag_id in selected_tags %}
+                        <input type="hidden" name="tags" value="{{ tag_id }}">
+                    {% endfor %}
+                    <input type="text" name="filter_name" placeholder="Name this filter...">
+                    <button type="submit" class="btn-secondary">Save Filter</button>
+                </form>
+            </div>
+
+            <!-- Active Filters Display -->
+            {% if query or selected_category or selected_tags %}
+                <div class="active-filters">
+                    <strong>Active filters:</strong>
+                    {% if query %} Search: <em>"{{ query }}"</em>{% endif %}
+                    {% if selected_category %}
+                        {% for category in categories %}
+                            {% if selected_category == category.id|stringformat:"s" %}
+                                &nbsp;| Category: <em>{{ category.name }}</em>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                    {% if selected_tags %}&nbsp;| Tags selected: <em>{{ selected_tags|length }}</em>{% endif %}
+                </div>
+            {% endif %}
+
+            <!-- Results Count -->
+            <div class="results-count">
+                Showing <strong>{{ page_obj.start_index }}–{{ page_obj.end_index }}</strong>
+                of <strong>{{ total_count }}</strong> product{{ total_count|pluralize }}
+            </div>
+
+            <!-- Results Table -->
+            {% if products %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>SKU</th>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Category</th>
+                            <th>Unit</th>
+                            <th>Tags</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                            <tr>
+                                <td>{{ product.sku }}</td>
+                                <td>{{ product.name }}</td>
+                                <td>{{ product.description }}</td>
+                                <td>{{ product.category.name }}</td>
+                                <td>{{ product.get_unit_of_measure_display }}</td>
+                                <td>
+                                    {% for tag in product.tags.all %}
+                                        <span class="tag-badge">{{ tag.name }}</span>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <!-- Pagination Controls -->
+                {% if page_obj.has_other_pages %}
+                    <div class="pagination">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}&q={{ query }}&category={{ selected_category }}{% for tag in selected_tags %}&tags={{ tag }}{% endfor %}">← Previous</a>
+                        {% endif %}
+                        <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}&q={{ query }}&category={{ selected_category }}{% for tag in selected_tags %}&tags={{ tag }}{% endfor %}">Next →</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+            {% else %}
+                <div class="no-results">
+                    <p>No products found matching your search.</p>
+                </div>
+            {% endif %}
+
         </div>
-    {% endif %}
-
-    <!-- Pagination -->
-    <div>
-        {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}&q={{ query }}&category={{ selected_category }}{% for tag_id in selected_tags %}&tags={{ tag_id }}{% endfor %}">Previous</a>
-        {% endif %}
-
-        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-
-        {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}&q={{ query }}&category={{ selected_category }}{% for tag_id in selected_tags %}&tags={{ tag_id }}{% endfor %}">Next</a>
-        {% endif %}
     </div>
 
-</body>
+    </body>
+
 </html>
