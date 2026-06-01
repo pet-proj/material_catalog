@@ -124,7 +124,6 @@ incremental implementation:
 | `feature/favourites` | Users can save individual products to a personal favourites list for quick access |
 | `feature/saved-filters` | Users can save a named search + filter combination and re-apply it in one click |
 | `feature/tests` | Unit tests covering product filtering logic and pagination behaviour |
-| `updated_search` *(merged)* | Query performance optimisation — replaced N+1 patterns with `select_related` / `prefetch_related` |
 
 ---
 
