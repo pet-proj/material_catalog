@@ -104,6 +104,28 @@ No manual data entry is required.
 - Result count updates dynamically
 - One-click clear to reset all filters
 
+### Favourites *(feature/favourites)*
+- Authenticated users can mark any product as a favourite
+- A dedicated favourites page lists all saved items
+
+### Saved Filters *(feature/saved-filters)*
+- Authenticated users can save a named combination of search query, category, and tags
+- Saved filters appear in a sidebar and can be re-applied in one click
+
+---
+
+## Feature Branches
+
+Additional features are developed on separate branches to demonstrate
+incremental implementation:
+
+| Branch | Purpose |
+|--------|---------|
+| `feature/favourites` | Users can save individual products to a personal favourites list for quick access |
+| `feature/saved-filters` | Users can save a named search + filter combination and re-apply it in one click |
+| `feature/tests` | Unit tests covering product filtering logic and pagination behaviour |
+| `updated_search` *(merged)* | Query performance optimisation — replaced N+1 patterns with `select_related` / `prefetch_related` |
+
 ---
 
 ## Data Models
@@ -156,6 +178,15 @@ would fire 41 separate database queries (1 for products + 20 for
 categories + 20 for tags). With these optimizations, it fires exactly
 3 queries regardless of result size.
 
+### Inline Code Commentary
+`catalog/views.py` contains detailed inline comments explaining each ORM
+decision as it is made — including the SQL each clause compiles to, why
+`.distinct()` is required on the tag JOIN, and Django's lazy evaluation
+model. Each filter block also includes a concrete suggested improvement
+(e.g. `SearchVector` / `SearchQuery` for full-text search, `django-mptt`
+for hierarchical categories, chained `.filter()` for AND tag logic) so
+the code is self-documenting beyond what this README covers.
+
 ---
 
 ## Future Optimizations
@@ -164,9 +195,13 @@ categories + 20 for tags). With these optimizations, it fires exactly
    (e.g. `Product.name`, `Product.category`) to speed up `WHERE` clauses
    significantly at 100k+ records.
 
-2. **Caching** — for read-heavy catalogs that change infrequently, cache
-   querysets using Django's cache framework (`cache.get` / `cache.set`) to
-   eliminate DB hits entirely for repeated identical queries.
+2. **Caching** — Categories and tags are stable data that rarely change
+   and are loaded on every request. In a high-traffic environment these
+   would be cached using Django's cache framework with Redis as the backend.
+   Cache invalidation would be handled via Django signals (`post_save` /
+   `post_delete`) to ensure stale data is never served. Product search
+   results would **not** be cached due to the high number of possible filter
+   permutations resulting in a very low cache hit rate.
 
 3. **Full-Text Search** — `icontains` uses `SQL LIKE '%term%'` which cannot
    use indexes and performs a full table scan. At scale, replace with
