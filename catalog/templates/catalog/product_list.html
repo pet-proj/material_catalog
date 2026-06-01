@@ -11,6 +11,10 @@
 
     <h1>🔌 Material Catalog</h1>
 
+    <a href="{% url 'catalog:favourites_list' %}" class="favourites-link">
+        ⭐ View Favourites ({{ favourite_ids|length }})
+    </a>
+
     <!-- Search & Filter Form -->
     <div class="search-form">
         <form method="GET">
@@ -84,6 +88,7 @@
                     <th>Category</th>
                     <th>Unit</th>
                     <th>Tags</th>
+                    <th>Favourite</th>
                 </tr>
             </thead>
             <tbody>
@@ -94,10 +99,22 @@
                         <td>{{ product.description }}</td>
                         <td>{{ product.category.name }}</td>
                         <td>{{ product.get_unit_of_measure_display }}</td>
-                        <td class="tags-cell">
-                            {% for tag in product.tags.all %}
-                                <span class="tag-badge">{{ tag.name }}</span>
-                            {% endfor %}
+                        <td>
+                            <div class="tags-cell">
+                                {% for tag in product.tags.all %}
+                                    <span class="tag-badge">{{ tag.name }}</span>
+                                {% endfor %}
+                            </div>
+                        </td>
+                        <td>
+                            <form method="POST"
+                                action="{% url 'catalog:toggle_favourite' product.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="star-btn"
+                                        title="{% if product.id in favourite_ids %}Remove from favourites{% else %}Add to favourites{% endif %}">
+                                    {% if product.id in favourite_ids %}⭐{% else %}☆{% endif %}
+                                </button>
+                            </form>
                         </td>
                     </tr>
                 {% endfor %}

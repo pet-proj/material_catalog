@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.db.models import Q
 from django.core.paginator import Paginator
 from .models import Product, Category, Tag
@@ -84,6 +84,7 @@ def product_list(request):
 
     paginator = Paginator(products, 10)
     page_obj = paginator.get_page(request.GET.get("page"))
+    favourite_ids = request.session.get("favourites", [])
 
     # ── Context ───────────────────────────────────────────────────────────
     # At this point, no SQL has been executed yet.
@@ -97,6 +98,87 @@ def product_list(request):
         "query": query,
         "selected_category": selected_category,
         "selected_tags": selected_tags,
+        "favourite_ids": favourite_ids,
     }
 
     return render(request, "catalog/product_list.html", context)
+
+
+def toggle_favourite(request, product_id):
+    """
+    Adds or removes a product from the user's favourites list.
+
+    Favourites are stored in the Django session as a list of product IDs.
+    No authentication or database model is required — the session persists
+    across page loads for the same browser automatically.
+
+    Session structure:
+        request.session['favourites'] = [1, 5, 12, 17]
+
+    Toggle logic:
+        - If product_id is in the list → remove it (unfavourite)
+        - If product_id is not in the list → add it (favourite)
+
+    session.modified = True is required when mutating a mutable object
+    (like a list) inside the session. Without it Django does not detect
+    the change and will not save the updated session to the database.
+
+    Future consideration:
+        If user authentication is introduced, favourites should be
+        migrated to a database model:
+        Favourite(user=ForeignKey, product=ForeignKey)
+        This would allow favourites to persist across devices and browsers.
+    """
+    favourites = request.session.get("favourites", [])
+
+    if product_id in favourites:
+        favourites.remove(product_id)
+    else:
+        favourites.append(product_id)
+
+    request.session["favourites"] = favourites
+    request.session.modified = True
+
+    # Preserve current filter state when redirecting back
+    # so the user lands on the same filtered page they were on
+    redirect_url = request.META.get("HTTP_REFERER", "/")
+    return redirect(redirect_url)
+
+
+def favourites_list(request):
+    """
+    Displays only the products the user has favourited.
+
+    Reads the favourites list from the session and filters
+    the product queryset to only return those product IDs.
+
+    SQL: WHERE product.id IN (1, 5, 12, 17)
+
+    select_related and prefetch_related are applied for the
+    same N+1 reasons as the main product list view.
+
+    If the session has no favourites, an empty queryset is returned
+    rather than all products — fail safe by default.
+    """
+    favourite_ids = request.session.get("favourites", [])
+
+    products = (
+        Product.objects.filter(id__in=favourite_ids)
+        .select_related("category")
+        .prefetch_related("tags")
+        .order_by("name")
+    )
+
+    categories = Category.objects.all().order_by("name")
+    tags = Tag.objects.all().order_by("name")
+
+    context = {
+        "products": products,
+        "categories": categories,
+        "tags": tags,
+        "favourite_ids": favourite_ids,
+        "total_count": products.count(),
+        "is_favourites_page": True,
+    }
+
+    return render(request, "catalog/favourites.html", context)

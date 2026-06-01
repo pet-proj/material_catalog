@@ -114,3 +114,31 @@ tr:hover {
   padding: 40px;
   color: #888;
 }
+.star-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 0;
+  color: #aaa;
+  display: block;
+  margin: 0 auto;
+}
+.star-btn:hover {
+  transform: scale(1.2);
+}
+th:last-child,
+td:last-child {
+  text-align: center;
+}
+.favourites-link {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: #0057a8;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: bold;
+}
+.favourites-link:hover {
+  text-decoration: underline;
+}

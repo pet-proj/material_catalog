@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="{% static 'catalog/css/favourites.css' %}">
+    <title>My Favourites — Material Catalog</title>
+</head>
+<body>
+
+    <h1>⭐ My Favourites</h1>
+
+    <a href="/" class="back-link">← Back to Catalog</a>
+
+    <div class="results-count">
+        <strong>{{ total_count }}</strong> favourited product{{ total_count|pluralize }}
+    </div>
+
+    {% if products %}
+        <table>
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Unit</th>
+                    <th>Tags</th>
+                    <th>Remove</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                    <tr>
+                        <td>{{ product.sku }}</td>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.description }}</td>
+                        <td>{{ product.category.name }}</td>
+                        <td>{{ product.get_unit_of_measure_display }}</td>
+                        <td>
+                            {% for tag in product.tags.all %}
+                                <span class="tag-badge">{{ tag.name }}</span>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            <form method="POST"
+                                  action="{% url 'catalog:toggle_favourite' product.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="star-btn"
+                                        title="Remove from favourites">
+                                    ⭐
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    {% else %}
+        <div class="no-results">
+            <p>No favourites yet.</p>
+            <p><a href="/">Browse the catalog</a> and star products to add them here.</p>
+        </div>
+    {% endif %}
+
+</body>
+</html>
