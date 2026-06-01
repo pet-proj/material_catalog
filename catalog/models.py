@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 
@@ -45,3 +46,11 @@ class Product(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.sku})"
+
+
+class Favourite(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='favourites')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='favourited_by')
+
+    class Meta:
+        unique_together = ('user', 'product')
